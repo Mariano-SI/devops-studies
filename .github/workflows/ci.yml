@@ -54,13 +54,15 @@ jobs:
         run: go test -v ./...
   build-and-push-docker:
     needs: test-and-verify
-    # Só faz o push se o evento for um push na master (merge conta como push)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    # Adicionamos o check de sucesso do needs para garantir que ele não herde o 'skipped'
+    if: |
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/master' && 
+      needs.test-and-verify.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
