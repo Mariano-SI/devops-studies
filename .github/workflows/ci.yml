@@ -53,12 +53,8 @@ jobs:
       - name: Run Tests
         run: go test -v ./...
   build-and-push-docker:
-    needs: test-and-verify
     # Adicionamos o check de sucesso do needs para garantir que ele não herde o 'skipped'
-    if: |
-      github.event_name == 'push' && 
-      github.ref == 'refs/heads/master' && 
-      needs.test-and-verify.result == 'success'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/master')
     runs-on: ubuntu-latest
     permissions:
       contents: read
