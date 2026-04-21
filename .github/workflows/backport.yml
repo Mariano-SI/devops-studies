@@ -1,30 +1,26 @@
 name: Automatic Backport
 
 on:
-  push:
-    branches:
-      - master  # Dispara sempre que algo entra na master (via merge de release ou hotfix)
+  pull_request:
+    types: [closed]
+    branches: [master] # Monitora quando um PR fecha na master
 
 jobs:
-  create-backport-pr:
+  backport:
+    name: Backport PR
     runs-on: ubuntu-latest
+    # Só roda se o PR foi mergeado (e não apenas fechado/cancelado)
+    if: github.event.pull_request.merged == true
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Baixa todo o histórico para conseguir fazer o merge
 
-      - name: Create Backport Pull Request
-        uses: peter-evans/create-pull-request@v6
+      - name: Create Backport
+        uses: korthout/backport-action@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: develop # Destino do PR
-          branch: automation/backport-master-to-develop # Nome da branch temporária
-          title: "🔄 Backport: Sync master into develop"
-          body: |
-            Este é um PR automático para garantir que as alterações da `master` (versão de produção) 
-            sejam integradas de volta na `develop`.
-            
-            **Por favor, resolva conflitos se houverem.**
-          commit-message: "chore: backport master to develop"
-          delete-branch: true # Deleta a branch temporária após o merge
+          # Alvo do backport
+          target_branches: develop
+          # Token padrão (garanta que as permissões de PR estão ON no Settings)
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Opcional: Adiciona o autor do PR original como responsável
+          add_author_as_assignee: true
