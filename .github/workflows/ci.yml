@@ -1,0 +1,54 @@
+name: CI - Go Verification
+
+on:
+  push:
+    branches: [ develop, master, "feature/**", "hotfix/**", "release/**" ]
+  pull_request:
+    branches: [ develop, master ]
+
+jobs:
+  check-gitflow:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Check Branch Naming Convention
+        run: |
+          DEST_BRANCH=${{ github.base_ref }}
+          SRC_BRANCH=${{ github.head_ref }}
+          
+          echo "Destino: $DEST_BRANCH"
+          echo "Origem: $SRC_BRANCH"
+
+          if [[ "$DEST_BRANCH" == "master" ]]; then
+            if [[ "$SRC_BRANCH" != release/* && "$SRC_BRANCH" != hotfix/* ]]; then
+              echo "ERRO: A branch $DEST_BRANCH só aceita merges de release/ ou hotfix/."
+              exit 1
+            fi
+          fi
+
+          if [[ "$DEST_BRANCH" == "develop" ]]; then
+            if [[ "$SRC_BRANCH" != feature/* && "$SRC_BRANCH" != bugfix/* && "$SRC_BRANCH" != release/* && "$SRC_BRANCH" != hotfix/* ]]; then
+              echo "ERRO: A branch develop só aceita feature/, bugfix/, release/ ou hotfix/."
+              exit 1
+            fi
+          fi
+
+  test-and-verify:
+    needs: check-gitflow # Opcional: só testa o código se o nome da branch estiver certo
+    if: always() && (needs.check-gitflow.result == 'success' || github.event_name == 'push')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install Dependencies
+        run: go mod tidy
+
+      - name: Run Tests
+        run: go test -v ./...
