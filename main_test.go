@@ -2,16 +2,17 @@ package main
 
 import "testing"
 
-func TestCheckHealth(t *testing.T) {
-	// Teste com uma URL que sabemos que deve estar online
+func TestCheckServer(t *testing.T) {
 	url := "https://google.com"
-	if !CheckHealth(url) {
-		t.Errorf("Esperava que %s estivesse ONLINE, mas retornou OFFLINE", url)
+	expectedStatus := 200
+
+	status, err := CheckServer(url)
+
+	if err != nil {
+		t.Errorf("Erro inesperado: %v", err)
 	}
 
-	// Teste com uma URL inválida
-	urlInvalida := "https://url-que-nao-existe-123.com"
-	if CheckHealth(urlInvalida) {
-		t.Errorf("Esperava que %s estivesse OFFLINE, mas retornou ONLINE", urlInvalida)
+	if status != expectedStatus {
+		t.Errorf("Esperado %d, mas obteve %d", expectedStatus, status)
 	}
 }

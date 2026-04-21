@@ -6,17 +6,17 @@ import (
 	"time"
 )
 
-// CheckHealth recebe uma URL e retorna true se o status for 200
-func CheckHealth(url string) bool {
-	client := http.Client{
+// CheckServer faz o GET em uma URL e retorna o status
+func CheckServer(url string) (int, error) {
+	client := &http.Client{
 		Timeout: 5 * time.Second,
 	}
 	resp, err := client.Get(url)
 	if err != nil {
-		return false
+		return 0, err
 	}
 	defer resp.Body.Close()
-	return resp.StatusCode == http.StatusOK
+	return resp.StatusCode, nil
 }
 
 func main() {
@@ -27,10 +27,11 @@ func main() {
 	}
 
 	for _, url := range urls {
-		status := "OFFLINE"
-		if CheckHealth(url) {
-			status = "ONLINE"
+		status, err := CheckServer(url)
+		if err != nil {
+			fmt.Printf("❌ Erro ao acessar %s: %v\n", url, err)
+			continue
 		}
-		fmt.Printf("[%s] - %s\n", status, url)
+		fmt.Printf("✅ %s: Status %d\n", url, status)
 	}
 }
