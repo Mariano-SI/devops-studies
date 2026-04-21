@@ -20,6 +20,7 @@ func CheckServer(url string) (int, error) {
 }
 
 func main() {
+	fmt.Println("🚀 Health Checker iniciado com sucesso dentro do Docker!")
 	urls := []string{
 		"https://google.com",
 		"https://github.com",
