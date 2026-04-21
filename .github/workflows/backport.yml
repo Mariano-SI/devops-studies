@@ -1,30 +1,29 @@
-name: Automatic Backport
+name: Automatic Backport (Full Sync)
 
 on:
   push:
     branches:
-      - master  # Dispara sempre que algo entra na master (via merge de release ou hotfix)
+      - master # Dispara sempre que algo entra na master
 
 jobs:
-  create-backport-pr:
+  sync-back-to-develop:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Baixa todo o histórico para conseguir fazer o merge
+          fetch-depth: 0 # Necessário para comparar o histórico das duas branches
 
-      - name: Create Backport Pull Request
-        uses: peter-evans/create-pull-request@v6
+      - name: Create Pull Request from Master to Develop
+        uses: repo-sync/pull-request@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: develop # Destino do PR
-          branch: automation/backport-master-to-develop # Nome da branch temporária
-          title: "🔄 Backport: Sync master into develop"
-          body: |
-            Este é um PR automático para garantir que as alterações da `master` (versão de produção) 
-            sejam integradas de volta na `develop`.
-            
-            **Por favor, resolva conflitos se houverem.**
-          commit-message: "chore: backport master to develop"
-          delete-branch: true # Deleta a branch temporária após o merge
+          source_branch: "master"
+          destination_branch: "develop"
+          pr_title: "🔄 Full Sync: Master into Develop"
+          pr_body: "Este PR sincroniza todas as diferenças da master de volta para a develop."
+          pr_label: "backport"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
