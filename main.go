@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -19,20 +20,36 @@ func CheckServer(url string) (int, error) {
 	return resp.StatusCode, nil
 }
 
-func main() {
-	fmt.Println("🚀 Health Checker iniciado com sucesso dentro do Docker!")
+type HealthResult struct {
+	URL    string `json:"url"`
+	Status int    `json:"status"`
+	Error  string `json:"error,omitempty"`
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
 	urls := []string{
 		"https://google.com",
 		"https://github.com",
 		"https://mercado-livre.com.br",
 	}
 
+	var results []HealthResult
 	for _, url := range urls {
 		status, err := CheckServer(url)
+		result := HealthResult{URL: url, Status: status}
 		if err != nil {
-			fmt.Printf("❌ Erro ao acessar %s: %v\n", url, err)
-			continue
+			result.Error = err.Error()
+			result.Status = 0
 		}
-		fmt.Printf("✅ %s: Status %d\n", url, status)
+		results = append(results, result)
 	}
-}// Hotfix aplicado para validar o fluxo de backport
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+}
+
+func main() {
+	fmt.Println("🚀 Health Checker web server iniciado na porta 8080!")
+	http.HandleFunc("/health", healthHandler)
+	http.ListenAndServe(":8080", nil)
+}
