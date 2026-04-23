@@ -9,12 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check Branch Naming Convention
+        env:
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         run: |
           DEST_BRANCH=${{ github.base_ref }}
           SRC_BRANCH=${{ github.head_ref }}
           
           echo "Destino: $DEST_BRANCH"
           echo "Origem: $SRC_BRANCH"
+          echo "Labels: $PR_LABELS"
 
           if [[ "$DEST_BRANCH" == "master" ]]; then
             if [[ "$SRC_BRANCH" != release/* && "$SRC_BRANCH" != hotfix/* ]]; then
@@ -24,8 +27,13 @@ jobs:
           fi
 
           if [[ "$DEST_BRANCH" == "develop" ]]; then
+            if [[ "$SRC_BRANCH" == "master" && "$PR_LABELS" == *backport* ]]; then
+              echo "PR de backport detectado; permitido."
+              exit 0
+            fi
+
             if [[ "$SRC_BRANCH" != feature/* && "$SRC_BRANCH" != bugfix/* && "$SRC_BRANCH" != release/* && "$SRC_BRANCH" != hotfix/* ]]; then
-              echo "ERRO: A branch develop só aceita feature/, bugfix/, release/ ou hotfix/."
+              echo "ERRO: A branch develop só aceita feature/, bugfix/, release/, hotfix/ ou backport de master."
               exit 1
             fi
           fi
